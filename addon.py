@@ -2,7 +2,6 @@
 import cookielib
 import re, os, time
 import urllib, urllib2
-#, httplib2
 import sys
 import json
 import HTMLParser
@@ -16,29 +15,13 @@ import xmltodict
 import m3u8
 import xbmcvfs
 
-
-ROOTDIR = xbmcaddon.Addon(id='plugin.video.plp').getAddonInfo('path')
 settings = xbmcaddon.Addon(id='plugin.video.plp')
-ROOT_URL = 'http://www.premierleaguepass.com/plp/servlets/'
-PUBLISH_POINT_URL = ROOT_URL+'publishpoint'
-LOGOUT_URL = ROOT_URL+'logout'
-LOGIN_URL = 'https://www.premierleaguepass.com/plp/secure/login'
-IMG_URL = 'http://smb.cdnllnwnl.neulion.com/u/smb/coliseum/thumbs/'
-SCHEDULE_URL = ROOT_URL+'schedule?format=json'
-HIGHLIGHT_URL = ROOT_URL+'browse?format=json'
-FANART = ROOTDIR+"/fanart.jpg"
-ICON = ROOTDIR+"/icon.png"
-VS_ICON = ROOTDIR+"/vs.png"
-ADDON_HANDLE = int(sys.argv[1])
-QUALITY = int(settings.getSetting(id="quality"))
-USERNAME = str(settings.getSetting(id="username"))
-PASSWORD = str(settings.getSetting(id="password"))
-NLTID = 'plp'
-nltdt=6
-nltnt=1
-teams = []
-bitrate_to_use = "4500"
+APP_CONFIG_URL = settings.getSetting(id="config_url")
+APP_USER_AGENT_STRING = settings.getSetting(id="user_agent")
+ROOTDIR = xbmcaddon.Addon(id='plugin.video.plp').getAddonInfo('path')
 ADDON_PROFILE = xbmc.translatePath(xbmcaddon.Addon(id='plugin.video.plp').getAddonInfo('profile'))
+ADDON_HANDLE = int(sys.argv[1])
+teams = []
 
 import urlparse
 
@@ -53,17 +36,57 @@ try:
     cookie_jar.load(ignore_discard=True, ignore_expires=True)
 except IOError:
     pass
+
 http_session.cookies = cookie_jar
+
+#Get settings if stored on file
+if not xbmcvfs.exists(ADDON_PROFILE+'urls.xml'):
+    req = http_session.get(APP_CONFIG_URL, params=None, headers=None, allow_redirects=False)
+    s_w_data = req.content
+    text_file = open(ADDON_PROFILE+"urls.xml", "w")
+    text_file.write(s_w_data)
+    text_file.close()
+        
+#Ensure file isn't corrupt
+
+try:
+    text_file = open(ADDON_PROFILE+"urls.xml", "r")
+    s_w_data = text_file.read()
+    text_file.close()
+    s_w_data_dict = xmltodict.parse(s_w_data)
+except:
+    s_w_data = ''
+    xbmcvfs.delete(ADDON_PROFILE+'urls.xml')
+    req = http_session.get(APP_CONFIG_URL, params=None, headers=None, allow_redirects=False)
+    s_w_data = req.content
+    print('##############' + s_w_data)
+    text_file = open(ADDON_PROFILE+"urls.xml", "w")
+    text_file.write(s_w_data)
+    text_file.close()
+    s_w_data_dict = xmltodict.parse(s_w_data)
+    pass
+
+ROOT_URL = s_w_data_dict['result']['appURL']['locDLServer'].replace('/home','/')
+SCHEDULE_URL = s_w_data_dict['result']['appURL']['locSchedule'] + '?format=json'
+HIGHLIGHT_URL = s_w_data_dict['result']['appURL']['locHighlights'] + '?format=json&ps=19&pn='
+PUBLISH_POINT_URL = ROOT_URL+'publishpoint'
+LOGOUT_URL = ROOT_URL+'logout'
+LOGIN_URL = 'https://www.premierleaguepass.com/plp/secure/login'
+IMG_URL = s_w_data_dict['result']['appURL']['locImgServer'] + '/'
+QUALITY = int(settings.getSetting(id="quality"))
+USERNAME = str(settings.getSetting(id="username"))
+PASSWORD = str(settings.getSetting(id="password"))
+FANART = ROOTDIR+"/fanart.jpg"
+ICON = ROOTDIR+"/icon.png"
+VS_ICON = ROOTDIR+"/vs.png"
 
 def CATEGORIES():           
         
-    addDir('Live/Full Replays & Upcoming','/live',1,ICON,FANART)
-    addDir('Highlights & Shows',ROOT_URL+'/browse?format=json&pn=1&ps=19',2,ICON,FANART)
-
+    addDir('Live/Full Replays & Upcoming','live',1,ICON,FANART)
+    addDir('Highlights & Shows',HIGHLIGHT_URL + '1',2,ICON,FANART)
 
 def LIVE_AND_UPCOMING():      
-    GET_LIVE_VIDEOS(ROOT_URL+'schedule?format=json')
-
+    GET_LIVE_VIDEOS(SCHEDULE_URL)
 
 def HIGHLIGHTS(url):
     #Highlights and Videos
@@ -101,7 +124,7 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
     req = urllib2.Request(url)
     req.add_header('Connection', 'keep-alive')
     req.add_header('Accept', '*/*')
-    req.add_header('User-Agent', 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25')
+    req.add_header('User-Agent', APP_USER_AGENT_STRING)
     req.add_header('Accept-Language', 'en-us')
     req.add_header('Accept-Encoding', 'gzip, deflate')
     
@@ -117,23 +140,16 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
             addDir('[COLOR=FF00B7EB]'+Home_Team+' vs '+Away_Team+'[/COLOR]',channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
 
 def GET_HIGHLIGHTS(url,scrape_type=None):
-    #print url
     req = urllib2.Request(url)
     req.add_header('Connection', 'keep-alive')
     req.add_header('Accept', '*/*')
-    req.add_header('User-Agent', 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25')
+    req.add_header('User-Agent', APP_USER_AGENT_STRING)
     req.add_header('Accept-Language', 'en-us')
     req.add_header('Accept-Encoding', 'gzip, deflate')
     
     response = urllib2.urlopen(req)    
     json_source = json.load(response)                           
     response.close()                
-    
-    #LIVE
-    #try:       
-    #Sort By Start Time
-    #json_source = sorted(json_source,key=lambda x:x['dateTimeGMT'])
-    
     
     for item in json_source['programs']:
             Home_Team = item['name']
@@ -147,7 +163,7 @@ def GET_HIGHLIGHTS(url,scrape_type=None):
     next_page = current_page_number+1
     
     if(current_page_number<total_page_number):
-        addDir('('+str(current_page_number)+'/'+str(total_page_number)+') Next Page -->',ROOT_URL+'/browse?format=json&pn='+str(next_page)+'&ps=19',2,VS_ICON,fanart=None)
+        addDir('('+str(current_page_number)+'/'+str(total_page_number)+') Next Page -->',HIGHLIGHT_URL+str(next_page),2,VS_ICON,fanart=None)
 
 def get_params():
     param=[]
@@ -257,10 +273,10 @@ def PlayVideo(video_id):
     
     if bitrate_to_use == '4500':
         try:
-            video_url = video_streams[bitrate_to_use] + '|User-Agent=Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
+            video_url = video_streams[bitrate_to_use] + '|User-Agent=' + APP_USER_AGENT_STRING
             #Quick way to check if it is a highlight video as they max out at 3000Kbps
-    except KeyError:
-            video_url = video_streams['3000'] + '|User-Agent=Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
+        except KeyError:
+            video_url = video_streams['3000'] + '|User-Agent=' + APP_USER_AGENT_STRING
       
     
     login(USERNAME,PASSWORD) #Check if we are logged in
@@ -278,7 +294,7 @@ def get_publishpoint_streams(video_id):
     set_cookies()  # set cookies
 
     post_data = {'id': video_id, 'type': 'video', 'nt': '1', 'gt': '0'}
-    headers = {'User-Agent': 'User-Agent=Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'}
+    headers = {'User-Agent': APP_USER_AGENT_STRING}
     m3u8_data = make_request(url=PUBLISH_POINT_URL, method='post', payload=post_data, headers=headers)
     m3u8_dict = xmltodict.parse(m3u8_data)['result']
     print('PLP Dict %s' % m3u8_dict)
@@ -313,7 +329,7 @@ def get_params():
                             param[splitparams[0]]=splitparams[1]
                             
     return param
-    
+
 params=get_params()
 url=None
 name=None
@@ -348,7 +364,7 @@ print "URL: "+str(url)
 print "Name: "+str(name)
 print "Video Id"
 print "scrape_type:"+str(scrape_type)
-#get_team_names()   
+#get_team_names() Will Implement later.
 
 if mode==None or url==None or len(url)<1:        
         CATEGORIES()        
