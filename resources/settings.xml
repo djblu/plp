@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+  <category label="100">
+    <setting id="username" type="text" label="110" default=""/>
+    <setting id="password" type="text" label="120" option="hidden" default=""/>
+  </category>
+  <category label="200">
+    <setting id="quality" type="enum" label="210" values="SD (240 kbit/s)|SD (400 kbit/s)|SD (800 kbit/s)|SD (1200 kbit/s)|SD (1600 kbit/s)|HD (3000 kbit/s)|HD (4500 kbit/s)" default="7" />
+  </category>
+</settings>
