@@ -277,8 +277,9 @@ def PlayVideo(video_id):
             #Quick way to check if it is a highlight video as they max out at 3000Kbps
         except KeyError:
             video_url = video_streams['3000'] + '|User-Agent=' + APP_USER_AGENT_STRING
-      
-    
+    else:
+        video_url = video_streams[bitrate_to_use] + '|User-Agent=' + APP_USER_AGENT_STRING
+        
     login(USERNAME,PASSWORD) #Check if we are logged in
     
     if progress.iscanceled():
