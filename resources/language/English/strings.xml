@@ -6,5 +6,8 @@
     <string id="120">Password</string>
     <!-- Stream settings -->
     <string id="200">Quality</string>
-    <string id="210">Stream Quality</string>
+    <!-- App config url -->
+    <string id="300">App config Urls</string>
+    <string id="310">Settings Url</string>
+    <string id="320">Addon User Agent</string>
 </strings>

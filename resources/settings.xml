@@ -7,4 +7,8 @@
   <category label="200">
     <setting id="quality" type="enum" label="210" values="SD (240 kbit/s)|SD (400 kbit/s)|SD (800 kbit/s)|SD (1200 kbit/s)|SD (1600 kbit/s)|HD (3000 kbit/s)|HD (4500 kbit/s)" default="7" />
   </category>
+  <category label="300">
+    <setting id="config_url" type="text" label="310" default="http://nlmobile.cdnak.neulion.com/plp/config/config_ios.xml" />
+    <setting id="user_agent" type="text" label="320" default="Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25" />
+  </category>
 </settings>
