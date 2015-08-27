@@ -129,7 +129,10 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
     req.add_header('Accept-Encoding', 'gzip, deflate')
     
     response = urllib2.urlopen(req)    
-    json_source = json.load(response)                           
+    try:
+        json_source = json.load(response)                           
+    except:
+        return
     response.close()                
     
     for item in json_source['schedule']:
@@ -148,7 +151,10 @@ def GET_HIGHLIGHTS(url,scrape_type=None):
     req.add_header('Accept-Encoding', 'gzip, deflate')
     
     response = urllib2.urlopen(req)    
-    json_source = json.load(response)                           
+    try:
+        json_source = json.load(response)                           
+    except:
+        return # No data received
     response.close()                
     
     for item in json_source['programs']:
@@ -196,7 +202,7 @@ def login(username=None, password=None):
             print('No username and password supplied.')
         
 def login_to_account(username, password):
-    url = ROOT_URL + 'login'
+    url = LOGIN_URL
     post_data = {
        'username': username,
        'password': password
@@ -285,7 +291,7 @@ def PlayVideo(video_id):
     if progress.iscanceled():
         progress.close()
         return
-    
+    print('Playing - ' + video_url)
     p = xbmc.Player()
     p.play(video_url)
     
@@ -299,15 +305,16 @@ def get_publishpoint_streams(video_id):
     m3u8_data = make_request(url=PUBLISH_POINT_URL, method='post', payload=post_data, headers=headers)
     m3u8_dict = xmltodict.parse(m3u8_data)['result']
     print('PLP Dict %s' % m3u8_dict)
-    m3u8_url = m3u8_dict['path'].replace('_ipad','')
+    
+    m3u8_url = m3u8_dict['path']
     m3u8_param = m3u8_url.split('?', 1)[-1]
     m3u8_header = {'Cookie': 'nlqptid=' + m3u8_param}
     m3u8_obj = m3u8.load(m3u8_url)
+    
     if m3u8_obj.is_variant:
         for playlist in m3u8_obj.playlists:
-            print(m3u8_url)
             bitrate = str(int(playlist.stream_info.bandwidth[:playlist.stream_info.bandwidth.find(' ')])/100)
-            streams[bitrate] = m3u8_url
+            streams[bitrate] = m3u8_url[:m3u8_url.rfind('/') + 1] + playlist.uri + '?' + m3u8_url.split('?')[1] 
     else:
         streams['only available'] = m3u8_url
         
@@ -367,7 +374,10 @@ print "Video Id"
 print "scrape_type:"+str(scrape_type)
 #get_team_names() Will Implement later.
 
-if mode==None or url==None or len(url)<1:        
+if mode==None or url==None or len(url)<1: 
+        ffdata = make_request(url='http://nlds7.lon.neulion.com:443/nlds_vod/coliseum/vod/2015/08/22/830/2_830_tottenhamhotspur_leicestercity_2015_h_whole_1_pc.mp4?nltid=plp&nltdt=0&nltnt=1&uid=42001&auth_key=52240314018cce367cf98224d974bddf-1440594158-32-*.m3u8;*.ts;*.mp4', method='post', payload='', headers='')
+        print('####################'+str(ffdata))
+  
         CATEGORIES()        
 elif mode==1:        
         LIVE_AND_UPCOMING()                     
