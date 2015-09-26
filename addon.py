@@ -120,7 +120,7 @@ def addDir(name,url,mode,iconimage,fanart=None,scrape_type=None,isFolder=True,in
     return ok
     
 def GET_LIVE_VIDEOS(url,scrape_type=None):
-    #print url
+    
     req = urllib2.Request(url)
     req.add_header('Connection', 'keep-alive')
     req.add_header('Accept', '*/*')
@@ -129,27 +129,59 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
     req.add_header('Accept-Encoding', 'gzip, deflate')
     
     response = urllib2.urlopen(req)    
+    
     try:
         json_source = json.load(response)                           
     except:
         return
     response.close()                
-    
+    dtnow = datetime.now()
+    dtutc = datetime.utcnow()
+    timediff = dtnow - dtutc
     for item in json_source['schedule']:
             Home_Team = item['home_team']
             Away_Team = item['away_team']
             channelId = item['programId']
-            #addDir(Home_Team+' vs '+Away_Team,channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
-            addDir('[COLOR=FF00B7EB]'+Home_Team+' vs '+Away_Team+'[/COLOR]',channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
+            starttime = item['dateTimeGMT']
+            
+            try:
+                endtime = item['endDateTimeGMT']
+            except KeyError:
+                endtime = starttime
+                
+            endtime = endtime.replace(".000", "")
+            starttime = starttime.replace(".000", "")
+            
+            try:
+                date_o = datetime.strptime(starttime, "%Y-%m-%dT%H:%M:%S")
+            except TypeError:
+                date_o = datetime.fromtimestamp(time.mktime(time.strptime(starttime, "%Y-%m-%dT%H:%M:%S")))
+            try:
+                date_end = datetime.strptime(endtime, "%Y-%m-%dT%H:%M:%S")
+            except TypeError:
+                date_end = datetime.fromtimestamp(time.mktime(time.strptime(endtime, "%Y-%m-%dT%H:%M:%S")))
+            
+            date_end = date_end + timediff
+            date_o = date_o + timediff
+            
+            if(date_o>datetime.now()):
+                color = "FFCCCC00" #Upcoming Game
+                addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team+'[/COLOR]',"-1",3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
+            if(date_end<datetime.now() and not date_end==date_o):
+                addDir(date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team,channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
+            if(date_o<datetime.now() and date_end>datetime.now()):
+                color = "FF00FF00" #Live Game
+                addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+'LIVE - '+Home_Team+' vs '+Away_Team+'[/COLOR]',channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
 
-def GET_HIGHLIGHTS(url,scrape_type=None):
+            
+def GET_HIGHLIGHTS(url,scrape_type=None):    
+    
     req = urllib2.Request(url)
     req.add_header('Connection', 'keep-alive')
     req.add_header('Accept', '*/*')
     req.add_header('User-Agent', APP_USER_AGENT_STRING)
     req.add_header('Accept-Language', 'en-us')
     req.add_header('Accept-Encoding', 'gzip, deflate')
-    
     response = urllib2.urlopen(req)    
     try:
         json_source = json.load(response)                           
@@ -256,6 +288,8 @@ def set_cookies():
     sc_data = make_request(url=url, method='post', payload='')
     
 def PlayVideo(video_id):
+    if(video_id=="-1"):
+        return
     progress = xbmcgui.DialogProgress()
     progress.create('Launching Stream', 'Please wait ..')
     
@@ -292,6 +326,7 @@ def PlayVideo(video_id):
         progress.close()
         return
     print('Playing - ' + video_url)
+    
     p = xbmc.Player()
     p.play(video_url)
     
@@ -304,8 +339,6 @@ def get_publishpoint_streams(video_id):
     headers = {'User-Agent': APP_USER_AGENT_STRING}
     m3u8_data = make_request(url=PUBLISH_POINT_URL, method='post', payload=post_data, headers=headers)
     m3u8_dict = xmltodict.parse(m3u8_data)['result']
-    print('PLP Dict %s' % m3u8_dict)
-    
     m3u8_url = m3u8_dict['path']
     m3u8_param = m3u8_url.split('?', 1)[-1]
     m3u8_header = {'Cookie': 'nlqptid=' + m3u8_param}
