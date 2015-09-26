@@ -144,35 +144,25 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
             channelId = item['programId']
             starttime = item['dateTimeGMT']
             gs = item['gs']
-            try:
-                endtime = item['endDateTimeGMT']
-            except KeyError:
-                endtime = starttime
-                
-            endtime = endtime.replace(".000", "")
             starttime = starttime.replace(".000", "")
             
             try:
                 date_o = datetime.strptime(starttime, "%Y-%m-%dT%H:%M:%S")
             except TypeError:
                 date_o = datetime.fromtimestamp(time.mktime(time.strptime(starttime, "%Y-%m-%dT%H:%M:%S")))
-            try:
-                date_end = datetime.strptime(endtime, "%Y-%m-%dT%H:%M:%S")
-            except TypeError:
-                date_end = datetime.fromtimestamp(time.mktime(time.strptime(endtime, "%Y-%m-%dT%H:%M:%S")))
             
-            date_end = date_end + timediff
             date_o = date_o + timediff
             
-            if(date_o>datetime.now()):
+            if(gs=='0'):
                 color = "FFCCCC00" #Upcoming Game
                 addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team+'[/COLOR]',"-1",3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
-            if(date_end<datetime.now() and not date_end==date_o):
-                addDir(date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team,channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
-            if(date_o<datetime.now() and date_end>datetime.now() or gs == '1'):
+            if(gs == '1'):
                 color = "FF00FF00" #Live Game
                 addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+'LIVE - '+Home_Team+' vs '+Away_Team+'[/COLOR]',channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
-
+            if(not gs=='0' and not gs=='1'):
+                addDir(date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team,channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
+       
+            
             
 def GET_HIGHLIGHTS(url,scrape_type=None):    
     
@@ -319,7 +309,7 @@ def PlayVideo(video_id):
             video_url = video_streams['3000'] + '|User-Agent=' + APP_USER_AGENT_STRING
     else:
         video_url = video_streams[bitrate_to_use] + '|User-Agent=' + APP_USER_AGENT_STRING
-        
+
     login(USERNAME,PASSWORD) #Check if we are logged in
     
     if progress.iscanceled():
