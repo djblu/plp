@@ -1,2 +1,3 @@
 0.0.1 Initial Release
 0.0.2 Few fixes and colour coding of games. Live = green. Upcoming game = Yellow. Finished game = no colour.
+0.0.3 Fixed issue of live games not showing.

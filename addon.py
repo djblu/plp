@@ -143,7 +143,7 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
             Away_Team = item['away_team']
             channelId = item['programId']
             starttime = item['dateTimeGMT']
-            
+            gs = item['gs']
             try:
                 endtime = item['endDateTimeGMT']
             except KeyError:
@@ -169,7 +169,7 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
                 addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team+'[/COLOR]',"-1",3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
             if(date_end<datetime.now() and not date_end==date_o):
                 addDir(date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team,channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
-            if(date_o<datetime.now() and date_end>datetime.now()):
+            if(date_o<datetime.now() and date_end>datetime.now() or gs == '1'):
                 color = "FF00FF00" #Live Game
                 addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+'LIVE - '+Home_Team+' vs '+Away_Team+'[/COLOR]',channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
 
