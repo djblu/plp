@@ -134,6 +134,7 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
         json_source = json.load(response)                           
     except:
         return
+        
     response.close()                
     dtnow = datetime.now()
     dtutc = datetime.utcnow()
@@ -143,9 +144,9 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
             Away_Team = item['away_team']
             channelId = item['programId']
             starttime = item['dateTimeGMT']
-            gs = item['gs']
+            gs = int(item['gs'])
             starttime = starttime.replace(".000", "")
-            
+            print gs
             try:
                 date_o = datetime.strptime(starttime, "%Y-%m-%dT%H:%M:%S")
             except TypeError:
@@ -153,13 +154,13 @@ def GET_LIVE_VIDEOS(url,scrape_type=None):
             
             date_o = date_o + timediff
             
-            if(gs=='0'):
+            if(gs==0):
                 color = "FFCCCC00" #Upcoming Game
                 addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team+'[/COLOR]',"-1",3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
-            if(gs == '1'):
+            if(gs==1):
                 color = "FF00FF00" #Live Game
                 addDir('[COLOR='+color+']'+date_o.strftime('%d %b %H:%M %p - ')+'LIVE - '+Home_Team+' vs '+Away_Team+'[/COLOR]',channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
-            if(not gs=='0' and not gs=='1'):
+            if(gs>1):
                 addDir(date_o.strftime('%d %b %H:%M %p - ')+Home_Team+' vs '+Away_Team,channelId,3,VS_ICON,fanart=None,scrape_type=None,isFolder=False,info=None)
        
             
